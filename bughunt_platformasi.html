@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BugHunt - Serversiz Veb Loyihalar Xatolarini Topish Platformasi</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --border: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1000px;
+            margin: 0 auto 30px auto;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .form-card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .form-card.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background-color: #0f172a;
+            color: white;
+            font-size: 14px;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .project-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s;
+        }
+
+        .project-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .project-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .project-desc {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .project-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            border-top: 1px solid var(--border);
+            padding-top: 12px;
+        }
+
+        .badge {
+            background-color: rgba(99, 102, 241, 0.15);
+            color: var(--primary);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .btn-sm {
+            background-color: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .btn-sm:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">🐞 BugHunt</div>
+        <button class="btn" onclick="toggleForm()">+ Loyiha qo‘shish</button>
+    </header>
+
+    <div class="container">
+        <!-- Yangi loyiha qo'shish formasi -->
+        <div class="form-card" id="projectForm">
+            <h3 style="margin-bottom: 15px;">Yangi veb-loyihani joylash</h3>
+            <div class="form-group">
+                <label>Loyiha nomi</label>
+                <input type="text" id="pName" placeholder="Masalan: Portfolio saytim">
+            </div>
+            <div class="form-group">
+                <label>Loyiha havolasi (URL)</label>
+                <input type="text" id="pUrl" placeholder="https://example.com">
+            </div>
+            <div class="form-group">
+                <label>Qisqacha tavsif va qayerda xato bo'lishi mumkin</label>
+                <textarea id="pDesc" rows="3" placeholder="Mobil versiyada menyu ochilmayapti..."></textarea>
+            </div>
+            <button class="btn" onclick="addProject()">Saqlash va e'lon qilish</button>
+        </div>
+
+        <!-- Loyihalar ro'yxati -->
+        <div class="projects-grid" id="projectsGrid">
+            <!-- Dinamik qo'shiladi -->
+        </div>
+    </div>
+
+    <script>
+        // localStorage dan loyihalarni o'qish (agar bo'lmasa standart 2 ta namuna qo'shiladi)
+        let projects = JSON.parse(localStorage.getItem('bugHuntProjects')) || [
+            {
+                name: "Online Maktab LMS",
+                url: "https://school-demo.uz",
+                desc: "O'quvchilar kabinetida baholar jadvali telefon ekranida to'g'ri turibdimi yoki yo'q tekshiring.",
+                bugs: 2
+            },
+            {
+                name: "Robotics Shop UI",
+                url: "https://roboshop.uz",
+                desc: "Savatga mahsulot qo'shish tugmasi ba'zida ishlamay qolyapti, console logni ko'ring.",
+                bugs: 5
+            }
+        ];
+
+        // Ma'lumotni brauzer xotirasiga saqlash va ekranni yangilash
+        function saveAndRender() {
+            localStorage.setItem('bugHuntProjects', JSON.stringify(projects));
+            renderProjects();
+        }
+
+        function renderProjects() {
+            const grid = document.getElementById('projectsGrid');
+            grid.innerHTML = '';
+
+            if (projects.length === 0) {
+                grid.innerHTML = '<p style="color: var(--text-muted); grid-column: 1/-1;">Hozircha loyihalar yo‘q.</p>';
+                return;
+            }
+
+            projects.forEach((p, index) => {
+                grid.innerHTML += `
+                    <div class="project-card">
+                        <div>
+                            <div class="project-title">${p.name}</div>
+                            <div class="project-desc">${p.desc}</div>
+                            <a href="${p.url}" target="_blank" style="color: var(--primary); font-size: 13px; text-decoration: none;">Saytga o'tish ↗</a>
+                        </div>
+                        <div class="project-footer">
+                            <span class="badge">${p.bugs} ta xato topilgan</span>
+                            <button class="btn-sm" onclick="reportBug(${index})">Xabar berish</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function toggleForm() {
+            const form = document.getElementById('projectForm');
+            form.classList.toggle('active');
+        }
+
+        function addProject() {
+            const name = document.getElementById('pName').value.trim();
+            const url = document.getElementById('pUrl').value.trim();
+            const desc = document.getElementById('pDesc').value.trim();
+
+            if(!name || !url) {
+                alert("Iltimos, loyiha nomi va havolasini kiriting!");
+                return;
+            }
+
+            projects.unshift({ name, url, desc, bugs: 0 });
+            
+            // Inputlarni tozalash
+            document.getElementById('pName').value = '';
+            document.getElementById('pUrl').value = '';
+            document.getElementById('pDesc').value = '';
+            toggleForm();
+            
+            saveAndRender(); // Saqlab, ekranni yangilash
+        }
+
+        function reportBug(index) {
+            const bugText = prompt("Topgan xatoligingizni qisqacha yozib yuboring:");
+            if(bugText) {
+                projects[index].bugs += 1;
+                saveAndRender(); // O'zgarishni saqlash
+                alert("Rahmat! Xatolik qayd etildi.");
+            }
+        }
+
+        // Sahifa ochilganda loyihalarni chiqarish
+        renderProjects();
+    </script>
+</body>
+</html>
